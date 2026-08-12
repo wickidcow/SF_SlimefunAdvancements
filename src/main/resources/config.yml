@@ -1,17 +1,18 @@
-# 启用自动更新
+# Enable automatic update checks.
 auto-update: true
 
-# 将自定义进度添加到原版进度菜单中 (实验性功能)
+# Add custom advancements to the vanilla advancements menu (experimental).
 use-advancements-api: true
 
-# 在聊天栏中展示进度达成消息
+# Announce completed advancements in chat.
 announce-advancements: true
 
-# 是否将粘液科技进度的按钮添加到粘液科技的指南中
+# Add the Slimefun Advancements button to the Slimefun Guide.
 add-advancements-to-guide: true
 
-# 是否输出调试日志
+# Enable additional diagnostic logging.
 debug: false
 
-# 在移除进度后是否执行 Bukkit.reloadData (可能造成卡顿)
+# Run Bukkit.reloadData after removing registered advancements.
+# This may cause a short server pause on large servers.
 reload-data-on-adv-remove: true
