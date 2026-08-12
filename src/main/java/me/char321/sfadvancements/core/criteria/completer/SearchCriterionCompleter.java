@@ -49,8 +49,8 @@ public class SearchCriterionCompleter implements CriterionCompleter {
         Bukkit.getScheduler().runTaskTimer(SFAdvancements.instance(), () -> {
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                 PlayerProfile.get(onlinePlayer, profile -> {
-                    // 由于未知情况，两次 profile.getGuideHistory() 可能会获取不同的结果导致 ClassCastException
-                    // 故仅获取一次，以避免报错
+                    // In some environments, two calls to profile.getGuideHistory() may return different
+                    // implementations and cause a ClassCastException. Read it once and reuse the result.
                     GuideHistory history = profile.getGuideHistory();
                     if (jegSupported) {
                         if (history instanceof JEGGuideHistory jeg) {

@@ -30,7 +30,7 @@ public class ConfigUtils {
                 try {
                     return getTemplate(itemName).clone();
                 } catch (IllegalArgumentException x) {
-                    SFAdvancements.warn("无效的物品类型 " + itemName);
+                    SFAdvancements.warn("Invalid item type " + itemName);
                 }
             }
             return null;
@@ -41,7 +41,7 @@ public class ConfigUtils {
         try {
             item = getTemplate(type).clone();
         } catch (IllegalArgumentException x) {
-            SFAdvancements.warn("无效的物品类型 " + type);
+            SFAdvancements.warn("Invalid item type " + type);
             return null;
         }
 

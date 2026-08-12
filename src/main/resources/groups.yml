@@ -1,41 +1,41 @@
 basic:
   display:
     type: SLIME_BALL
-    name: "&f基础"
+    name: "&fBasic"
     lore:
-      - "&7&o粘液科技的核心玩法"
+      - "&7&oThe core spirit of Slimefun."
 
 electric:
   display:
     type: REDSTONE
-    name: "&e电力"
+    name: "&eElectric"
     lore:
-      - "&7&o文明的中心"
+      - "&7&oThe center of civilization."
 
 cargo:
   display:
     type: CARGO_MANAGER
-    name: "&6货运"
+    name: "&6Cargo"
     lore:
-      - "&7&o奇观的一小步"
+      - "&7&oThe beginnings of something magnificent."
 
 technical:
   display:
     type: DIAMOND_PICKAXE
-    name: "&4科技"
+    name: "&4Technical"
     lore:
-      - "&7&o旋转马达，起飞!"
+      - "&7&ohaha spinny motor go nyooom"
 
 magical:
   display:
     type: ENDER_EYE
-    name: "&d魔法"
+    name: "&dMagical"
     lore:
-      - "&7&o魔法是时间的产物"
+      - "&7&oMastery is the product of time."
 
 other:
   display:
     type: LAVA_BUCKET
-    name: "&7其他"
+    name: "&7Other"
     lore:
-      - "&7&o其他进度"
+      - "&7&oMiscellaneous advancements"

@@ -2,13 +2,13 @@ portable_workbench:
   group: basic
   display:
     type: CRAFTING_TABLE
-    name: "&a便携合成"
+    name: "&aPortable Crafting"
     lore:
-      - "使用一次便携工作台"
-  name: "&a[便携合成]"
+      - "Use a portable crafting table"
+  name: "&a[Portable Crafting]"
   criteria:
     interact:
-      name: "使用一次便携工作台"
+      name: "Use portable crafting table"
       type: interact
       amount: 1
       item:
@@ -21,13 +21,13 @@ dust:
   group: basic
   display:
     type: GUNPOWDER
-    name: "&a变成粉末"
+    name: "&aInto dust it turns"
     lore:
-      - "使用一次矿石粉碎机"
-  name: "&a[变成粉末]"
+      - "Crush an ore using an ore crusher"
+  name: "&a[Into dust it turns]"
   criteria:
     inventory:
-      name: "使用一次矿石粉碎机"
+      name: "Use ore crusher"
       type: multiblock
       multiblock: ORE_CRUSHER
 
@@ -35,13 +35,13 @@ electricity:
   group: electric
   display:
     type: ENERGY_REGULATOR
-    name: "&a电力!!!"
+    name: "&aElectricity!!!"
     lore:
-      - "放置一个能源调节器"
-  name: "&a[电力!!!]"
+      - "Place an energy regulator"
+  name: "&a[Electricity!!!]"
   criteria:
     build:
-      name: "放置一个能源调节器"
+      name: "Place energy regulator"
       type: place
       amount: 1
       item:
@@ -51,13 +51,13 @@ gapple_juice:
   group: other
   display:
     type: GOLDEN_APPLE_JUICE
-    name: "&a尝起来像陈年老酒"
+    name: "&aTastes like aged wine"
     lore:
-      - "饮用金苹果汁"
-  name: "&a[尝起来像陈年老酒]"
+      - "Drink golden apple juice"
+  name: "&a[Tastes like aged wine]"
   criteria:
     consume:
-      name: "饮用金苹果汁"
+      name: "Consume golden apple juice"
       type: consume
       amount: 5
       item:
@@ -67,29 +67,29 @@ industrial_revolution:
   group: electric
   display:
     type: FURNACE
-    name: "&a工业革命"
+    name: "&aIndustrial Revolution"
     lore:
-      - "获得以下物品:"
-      - "电力碎矿机, 电动淘金机, 电动洗矿机, 电动铸锭机"
-  name: "&a[工业革命]"
+      - "Obtain the following items:"
+      - "ore grinder, gold pan, dust washer, ingot factory"
+  name: "&a[Industrial Revolution]"
   criteria:
     oregrinder:
-      name: "获得电力碎矿机"
+      name: "Obtain an electric ore grinder"
       type: inventory
       item:
         type: ELECTRIC_ORE_GRINDER
     goldpan:
-      name: "获得电动淘金机"
+      name: "Obtain an electric gold pan"
       type: inventory
       item:
         type: ELECTRIC_GOLD_PAN
     dustwasher:
-      name: "获得电动洗矿机"
+      name: "Obtain an electric dust washer"
       type: inventory
       item:
         type: ELECTRIC_DUST_WASHER
     ingotfactory:
-      name: "获得电动铸锭机"
+      name: "Obtain an electric ingot factory"
       type: inventory
       item:
         type: ELECTRIC_INGOT_FACTORY
@@ -98,18 +98,18 @@ exploding_tools:
   group: other
   display:
     type: EXPLOSIVE_PICKAXE
-    name: "&a爆炸工具"
+    name: "&aExploding Tools"
     lore:
-      - "获得爆炸镐和爆炸铲"
+      - "Obtain an explosive pickaxe and shovel"
   name: "&a[Exploding Tools]"
   criteria:
     pickaxe:
-      name: "获得爆炸镐"
+      name: "Obtain explosive pickaxe"
       type: inventory
       item:
         type: EXPLOSIVE_PICKAXE
     shovel:
-      name: "获得爆炸铲"
+      name: "Obtain explosive shovel"
       type: inventory
       item:
         type: EXPLOSIVE_SHOVEL
@@ -118,13 +118,13 @@ fake_diamond:
   group: basic
   display:
     type: SYNTHETIC_DIAMOND
-    name: "&a人造钻石"
+    name: "&aMan-made diamonds"
     lore:
-      - "获得一块人造钻石"
-  name: "&a[人造钻石]"
+      - "Create a synthetic diamond"
+  name: "&a[Man-made diamonds]"
   criteria:
     diamond:
-      name: "获得一块人造钻石"
+      name: "Obtain synthetic diamond"
       type: inventory
       item:
         type: SYNTHETIC_DIAMOND
@@ -133,13 +133,13 @@ carbonado:
   group: basic
   display:
     type: CARBONADO
-    name: "&a闪耀的黑色钻石"
+    name: "&aShiny darkness"
     lore:
-      - "获得一块黑金刚石"
-  name: "&a[闪耀的黑色钻石]"
+      - "Create a carbonado diamond"
+  name: "&a[Shiny darkness]"
   criteria:
     carbonado:
-      name: "获得一块黑金刚石"
+      name: "Obtain carbonado"
       type: inventory
       item: CARBONADO
 
@@ -147,13 +147,13 @@ black_gold:
   group: basic
   display:
     type: BUCKET_OF_OIL
-    name: "&a黑色黄金"
+    name: "&aBlack Gold"
     lore:
-      - "获得原油桶"
-  name: "&a[黑色黄金]"
+      - "Mine for oil"
+  name: "&a[Black Gold]"
   criteria:
     oil:
-      name: "获得原油桶"
+      name: "Obtain oil"
       type: inventory
       item: BUCKET_OF_OIL
 
@@ -161,13 +161,13 @@ ender_charms:
   group: magical
   display:
     type: ENDER_PEARL
-    name: "&a末影的魅力"
+    name: "&aEnder Charms"
     lore:
-      - "研究末影护身符"
-  name: "&a[末影的魅力]"
+      - "Research ender talismans"
+  name: "&a[Ender Charms]"
   criteria:
     research:
-      name: "研究末影护身符"
+      name: "Research ender talismans"
       type: research
       research: "slimefun:ender_talismans"
 
@@ -175,13 +175,13 @@ who_asked:
   group: other
   display:
     type: MAP
-    name: "&a谁问了问题?"
+    name: "&aWho Asked?"
     lore:
-      - "搜索 who asked"
-  name: "&a[谁问了问题?]"
+      - "Search for who asked"
+  name: "&a[Who Asked?]"
   criteria:
     ask:
-      name: "搜索 who asked"
+      name: "Search for who asked"
       type: search
       search: "who asked"
   hidden: true
