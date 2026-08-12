@@ -22,22 +22,22 @@ public class DumpItemCommand implements SubCommand {
     @Override
     public boolean onExecute(CommandSender sender, Command command, String label, String[] args) {
         if(!(sender instanceof Player)) {
-            sender.sendMessage("只有玩家才能执行该指令");
+            sender.sendMessage("Only players can use this command.");
             return false;
         }
 
         Player p = (Player) sender;
 
-        sender.sendMessage("正在生成序列化配置...");
+        sender.sendMessage("Generating serialized configuration...");
         ItemStack item = p.getInventory().getItemInMainHand();
         if (item == null || item.getType().isAir()) {
-            sender.sendMessage(ChatColor.RED + "请手持一个物品再执行此指令。");
+            sender.sendMessage(ChatColor.RED + "Hold an item in your main hand before using this command.");
             return true;
         }
-        SFAdvancements.info("物品序列化配置: " + item);
+        SFAdvancements.info("Item serialization source: " + item);
 
         if (!item.hasItemMeta()) {
-            SFAdvancements.info("该物品可以直接使用该ID表示: \n" + item.getType().name());
+            SFAdvancements.info("This item can be represented directly by this ID:\n" + item.getType().name());
         }
 
         ItemMeta im = item.getItemMeta();
@@ -49,7 +49,7 @@ public class DumpItemCommand implements SubCommand {
             if (itemData.isPresent()) {
                 String id = itemData.get();
                 if (SlimefunUtils.isItemSimilar(item, SlimefunItem.getById(id).getItem(), true)) {
-                    SFAdvancements.info("该物品可以直接使用该ID表示: \n" + id);
+                    SFAdvancements.info("This item can be represented directly by this ID:\n" + id);
                 }
                 type = id;
             }
@@ -64,13 +64,13 @@ public class DumpItemCommand implements SubCommand {
                 representation.append("  - ").append(s.replace(ChatColor.COLOR_CHAR, '&')).append("\n");
             }
         }
-        SFAdvancements.info("已生成 \n" + representation);
+        SFAdvancements.info("Generated config representation:\n" + representation);
 
         YamlConfiguration configuration = new YamlConfiguration();
         configuration.set("item", item);
-        SFAdvancements.info("物品的序列化配置: \n" + configuration.saveToString());
+        SFAdvancements.info("Serialized Bukkit item configuration:\n" + configuration.saveToString());
 
-        sender.sendMessage("已完成！请检查控制台。");
+        sender.sendMessage("Done! Check the console for the generated configuration.");
         return true;
     }
 
