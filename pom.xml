@@ -6,7 +6,7 @@
 
     <groupId>me.char321</groupId>
     <artifactId>sfadvancements</artifactId>
-    <version>MODIFIED</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>SlimefunAdvancements</name>
@@ -36,7 +36,7 @@
 
     <build>
         <defaultGoal>clean package</defaultGoal>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>SF_SlimefunAdvancements${project.version}</finalName>
 
         <plugins>
             <plugin>
