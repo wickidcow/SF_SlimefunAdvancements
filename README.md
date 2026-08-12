@@ -12,7 +12,7 @@ Original project: `char3210/SlimefunAdvancements`
 
 ## Requirements
 
-- Java 16 or newer for the current project baseline
+- Java 21 or newer for the current Paper 1.21.x project baseline
 - A compatible Slimefun installation
 - GuizhanLibPlugin, as required by the current compatibility code
 
