@@ -54,8 +54,8 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         instance = this;
 
         if (!getServer().getPluginManager().isPluginEnabled("GuizhanLibPlugin")) {
-            getLogger().log(Level.SEVERE, "本插件需要 鬼斩前置库插件(GuizhanLibPlugin) 才能运行!");
-            getLogger().log(Level.SEVERE, "从此处下载: https://50l.cc/gzlib");
+            getLogger().log(Level.SEVERE, "This plugin requires GuizhanLibPlugin to run!");
+            getLogger().log(Level.SEVERE, "Download it from: https://50l.cc/gzlib");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -78,7 +78,7 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         DefaultCompleters.registerDefaultCompleters();
         CriteriaTypes.loadDefaultCriteria();
 
-        info("启动自动保存任务...");
+        info("Starting auto-save task...");
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new AutoSaveTask(), 6000L, 6000L);
 
         Metrics metrics = new Metrics(this, 14130);
@@ -86,11 +86,11 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
                 () -> config.getBoolean("use-advancements-api") ? "true" : "false"));
 
         // allow other plugins to register their criteria completers
-        info("等待服务器启动中...");
+        info("Waiting for server start...");
         Utils.runLater(() -> {
-            info("正在从配置文件中加载进度组...");
+            info("Loading advancement groups from config...");
             loadGroups();
-            info("正在从配置文件中加载进度...");
+            info("Loading advancements from config...");
             loadAdvancements();
 
             if (config.getBoolean("use-advancements-api")) {
@@ -106,7 +106,7 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         try {
             advManager.save();
         } catch (IOException e) {
-            getLogger().log(Level.SEVERE, e, () -> "无法保存进度");
+            getLogger().log(Level.SEVERE, e, () -> "Could not save advancements");
         }
     }
 
@@ -121,7 +121,7 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
 
     private void autoUpdate() {
         if (config.getBoolean("auto-update") && getDescription().getVersion().startsWith("Build")) {
-            info("正在检查更新...");
+            info("Checking for updates...");
             GuizhanUpdater.start(this, this.getFile(), "SlimefunGuguProject", "SlimefunAdvancements", "main");
         }
     }
