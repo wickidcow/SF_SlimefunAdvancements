@@ -1,24 +1,70 @@
-name: Java CI
+name: Build SlimefunAdvancements
 
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    if: startsWith(github.event.head_commit.message, '[CI skip]') == false
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-          cache: 'maven'
+          java-version: '17'
+          cache: maven
+
       - name: Build with Maven
-        run: mvn package --file pom.xml
+        run: mvn --batch-mode clean package
+
+      - name: Resolve build output
+        id: project
+        shell: bash
+        run: |
+          VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          JAR="target/SF_SlimefunAdvancements${VERSION}.jar"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "jar=${JAR}" >> "$GITHUB_OUTPUT"
+          test -f "$JAR"
+          echo "Built $JAR"
+
+      - name: Upload versioned JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SF_SlimefunAdvancements${{ steps.project.outputs.version }}.jar
+          path: ${{ steps.project.outputs.jar }}
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Publish raw JAR to GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.project.outputs.version }}
+          JAR: ${{ steps.project.outputs.jar }}
+        run: |
+          TAG="v${VERSION}"
+          TITLE="SlimefunAdvancements ${VERSION}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" --clobber
+          else
+            gh release create "$TAG" "$JAR" \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --generate-notes
+          fi
