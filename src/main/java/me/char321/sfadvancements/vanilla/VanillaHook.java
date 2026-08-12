@@ -88,7 +88,7 @@ public class VanillaHook {
                     removedAny = true;
                 }
             } catch (Exception e) {
-                SFAdvancements.warn("无法移除进度 " + key + ": " + e.getMessage());
+                SFAdvancements.warn("Could not remove advancement " + key + ": " + e.getMessage());
             }
         }
         if (removedAny && SFAdvancements.getMainConfig().getBoolean("reload-data-on-adv-remove")) {
@@ -165,9 +165,9 @@ public class VanillaHook {
         if (!SFAdvancements.getMainConfig().getBoolean("debug")) {
             return;
         }
-        SFAdvancements.info("进度组背景: " + groupId + " -> " + resolvedBackground);
-        SFAdvancements.info("背景解析: raw=" + rawBackground + ", resolved=" + resolvedBackground);
-        SFAdvancements.info("进度组JSON: " + key + " -> " + json);
+        SFAdvancements.info("Advancement group background: " + groupId + " -> " + resolvedBackground);
+        SFAdvancements.info("Background resolution: raw=" + rawBackground + ", resolved=" + resolvedBackground);
+        SFAdvancements.info("Advancement group JSON: " + key + " -> " + json);
     }
 
     private static String getDescriptionFor(List<String> lore, Advancement adv) {
@@ -196,10 +196,10 @@ public class VanillaHook {
             if (loaded != null) {
                 loadedKeys.add(key);
             } else {
-                SFAdvancements.warn("无法注册进度 " + key + ": 返回空对象");
+                SFAdvancements.warn("Could not register advancement " + key + ": server returned null");
             }
         } catch (Exception e) {
-            SFAdvancements.warn("无法注册进度 " + key + ": " + e.getMessage());
+            SFAdvancements.warn("Could not register advancement " + key + ": " + e.getMessage());
         }
     }
 
@@ -207,22 +207,22 @@ public class VanillaHook {
         NamespacedKey key = NamespacedKey.minecraft("story/root");
         org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
         if (adv == null) {
-            SFAdvancements.warn("无法读取原版进度背景: 未找到 " + key);
+            SFAdvancements.warn("Could not read vanilla advancement background: " + key + " was not found");
             return;
         }
         String background = readBackgroundFromAdvancement(adv);
         backgroundStyle = detectBackgroundStyle(background);
-        SFAdvancements.info("原版进度背景: " + key + " -> " + background);
+        SFAdvancements.info("Vanilla advancement background: " + key + " -> " + background);
     }
 
     private void logResolvedBackgroundFromServer(NamespacedKey key) {
         org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
         if (adv == null) {
-            SFAdvancements.warn("无法读取注册进度背景: 未找到 " + key);
+            SFAdvancements.warn("Could not read registered advancement background: " + key + " was not found");
             return;
         }
         String background = readBackgroundFromAdvancement(adv);
-        SFAdvancements.info("注册进度背景(服务端): " + key + " -> " + background);
+        SFAdvancements.info("Registered advancement background (server): " + key + " -> " + background);
     }
 
     @Nullable
@@ -559,7 +559,7 @@ public class VanillaHook {
         if (!SFAdvancements.getMainConfig().getBoolean("debug")) {
             return;
         }
-        SFAdvancements.warn("调试信息(" + context + "): " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        SFAdvancements.warn("Debug information (" + context + "): " + e.getClass().getSimpleName() + ": " + e.getMessage());
     }
 
     private static void addSkullProfile(JsonObject components, ItemMeta meta) {
@@ -676,7 +676,7 @@ public class VanillaHook {
     public void complete(Player p, NamespacedKey key) {
         org.bukkit.advancement.Advancement advancement = Bukkit.getAdvancement(key);
         if (advancement == null) {
-            SFAdvancements.warn("尝试完成未注册的成就 " + key);
+            SFAdvancements.warn("Attempted to complete unregistered advancement " + key);
             return;
         }
         Utils.runSync(() -> {
@@ -690,7 +690,7 @@ public class VanillaHook {
     public void revoke(Player p, NamespacedKey key) {
         org.bukkit.advancement.Advancement advancement = Bukkit.getAdvancement(key);
         if (advancement == null) {
-            SFAdvancements.warn("尝试撤销未注册的成就 " + key);
+            SFAdvancements.warn("Attempted to revoke unregistered advancement " + key);
             return;
         }
         Utils.runSync(() -> {
