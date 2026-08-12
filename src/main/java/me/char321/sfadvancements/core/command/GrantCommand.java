@@ -18,13 +18,13 @@ public class GrantCommand implements SubCommand {
     @Override
     public boolean onExecute(CommandSender sender, Command command, String label, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(ChatColor.RED + "用法: /" + label + " grant <玩家> <进度>");
+            sender.sendMessage(ChatColor.RED + "Usage: /" + label + " grant <player> <advancement>");
             return false;
         }
 
         Player p = Bukkit.getPlayer(args[1]);
         if (p == null) {
-            sender.sendMessage(ChatColor.RED + "无法找到玩家 " + args[1]);
+            sender.sendMessage(ChatColor.RED + "Could not find player " + args[1]);
             return false;
         }
 
@@ -32,18 +32,18 @@ public class GrantCommand implements SubCommand {
             for (Advancement adv : SFAdvancements.getRegistry().getAdvancements().values()) {
                 adv.complete(p);
             }
-            sender.sendMessage("已为玩家解锁所有进度！");
+            sender.sendMessage("Granted all advancements to the player!");
             return true;
         }
 
         Advancement adv = SFAdvancements.getRegistry().getAdvancement(NamespacedKey.fromString(args[2]));
         if (adv == null) {
-            sender.sendMessage(ChatColor.RED + "无法找到进度 " + args[2]);
+            sender.sendMessage(ChatColor.RED + "Could not find advancement " + args[2]);
             return false;
         }
 
         adv.complete(p);
-        sender.sendMessage("已为玩家 " + p.getName() + " 解锁进度 " + adv.getKey());
+        sender.sendMessage("Granted advancement " + adv.getKey() + " to player " + p.getName());
         return true;
     }
 
