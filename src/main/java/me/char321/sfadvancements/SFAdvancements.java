@@ -61,6 +61,7 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         }
 
         config = new Config(this);
+        enforceRecipeSafeConfig();
 
         detectCapabilities();
 
@@ -126,8 +127,18 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         }
     }
 
+    private void enforceRecipeSafeConfig() {
+        if (config.getBoolean("reload-data-on-adv-remove")) {
+            warn("Disabling reload-data-on-adv-remove because Bukkit.reloadData() can unregister runtime recipes. "
+                    + "Slimefun Advancements now keeps recipe registration intact.");
+            config.setValue("reload-data-on-adv-remove", false);
+            config.save();
+        }
+    }
+
     public void reload() {
         config.reload();
+        enforceRecipeSafeConfig();
         advManager.getPlayerMap().clear();
         registry.getAdvancements().clear();
         registry.getAdvancementGroups().clear();
