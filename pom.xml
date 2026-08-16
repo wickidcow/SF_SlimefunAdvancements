@@ -6,7 +6,7 @@
 
     <groupId>me.char321</groupId>
     <artifactId>sfadvancements</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>SlimefunAdvancements</name>
@@ -58,10 +58,6 @@
                         <relocation>
                             <pattern>org.bstats</pattern>
                             <shadedPattern>me.char321.sfadvancements.libs.bstats</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>net.roxeez.advancement</pattern>
-                            <shadedPattern>me.char321.sfadvancements.libs.advancementapi</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -147,13 +143,6 @@
                     <artifactId>dough-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.slimefunguguproject</groupId>
-            <artifactId>AdvancementAPI</artifactId>
-            <version>3a2ece1ace</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
