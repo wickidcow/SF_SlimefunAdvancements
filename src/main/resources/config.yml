@@ -13,6 +13,7 @@ add-advancements-to-guide: true
 # Enable additional diagnostic logging.
 debug: false
 
-# Run Bukkit.reloadData after removing registered advancements.
-# This may cause a short server pause on large servers.
-reload-data-on-adv-remove: true
+# Legacy compatibility option. This must remain false.
+# Bukkit.reloadData() can unregister recipes added dynamically by Slimefun and other plugins.
+# The plugin also forces this off at runtime for older existing config files.
+reload-data-on-adv-remove: false
