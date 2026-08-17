@@ -2,11 +2,10 @@ name: Build SlimefunAdvancements
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -15,79 +14,51 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
-
       - name: Build with Maven
-        id: maven
-        shell: bash
-        run: |
-          set +e
-          mvn --batch-mode clean package 2>&1 | tee maven-build.log
-          STATUS=${PIPESTATUS[0]}
-          echo "status=${STATUS}" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Surface Maven failure
-        if: steps.maven.outputs.status != '0'
-        shell: bash
-        run: |
-          echo "Maven failed with exit code ${{ steps.maven.outputs.status }}"
-          grep -E '^\[ERROR\]' maven-build.log | tail -n 30 | while IFS= read -r line; do
-            line="${line//'%'/'%25'}"
-            line="${line//$'\r'/'%0D'}"
-            line="${line//$'\n'/'%0A'}"
-            echo "::error::${line}"
-          done
-          exit 1
-
+        run: mvn --batch-mode clean package
       - name: Resolve build output
         id: project
         shell: bash
         run: |
+          set -euo pipefail
           VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
           JAR="target/SF_SlimefunAdvancements${VERSION}.jar"
+          test -s "$JAR"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "jar=${JAR}" >> "$GITHUB_OUTPUT"
-          test -f "$JAR"
-          echo "Built $JAR"
-
+          sha256sum "$JAR"
+      - name: Upload CI artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: SF_SlimefunAdvancements${{ steps.project.outputs.version }}
+          path: ${{ steps.project.outputs.jar }}
+          if-no-files-found: error
       - name: Publish raw JAR to GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.project.outputs.version }}
           JAR: ${{ steps.project.outputs.jar }}
         run: |
-          TAG="v${VERSION}"
-          TITLE="SlimefunAdvancements ${VERSION}"
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${VERSION}"; fi
+          TITLE="SF_SlimefunAdvancements ${VERSION}"
           NOTES_FILE=".github/release-notes/${TAG}.md"
-
           if gh release view "$TAG" >/dev/null 2>&1; then
-            if [ -f "$NOTES_FILE" ]; then
-              gh release edit "$TAG" \
-                --title "$TITLE" \
-                --notes-file "$NOTES_FILE"
-            fi
             gh release upload "$TAG" "$JAR" --clobber
+            if [ -f "$NOTES_FILE" ]; then gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"; fi
           elif [ -f "$NOTES_FILE" ]; then
-            gh release create "$TAG" "$JAR" \
-              --target "$GITHUB_SHA" \
-              --title "$TITLE" \
-              --notes-file "$NOTES_FILE"
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --title "$TITLE" --notes-file "$NOTES_FILE"
           else
-            gh release create "$TAG" "$JAR" \
-              --target "$GITHUB_SHA" \
-              --title "$TITLE" \
-              --generate-notes
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --title "$TITLE" --generate-notes
           fi
