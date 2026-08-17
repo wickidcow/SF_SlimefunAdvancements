@@ -191,6 +191,15 @@ public class VanillaHook {
     }
 
     private void loadAdvancement(NamespacedKey key, JsonObject json) {
+        org.bukkit.advancement.Advancement existing = Bukkit.getAdvancement(key);
+        if (existing != null) {
+            loadedKeys.add(key);
+            if (SFAdvancements.getMainConfig().getBoolean("debug")) {
+                SFAdvancements.info("Reusing already loaded advancement " + key);
+            }
+            return;
+        }
+
         try {
             org.bukkit.advancement.Advancement loaded = Bukkit.getUnsafe().loadAdvancement(key, json.toString());
             if (loaded != null) {
@@ -199,6 +208,16 @@ public class VanillaHook {
                 SFAdvancements.warn("Could not register advancement " + key + ": server returned null");
             }
         } catch (Exception e) {
+            // Paper can still report an advancement as already existing if its live registry
+            // changed between the lookup above and UnsafeValues#loadAdvancement. Treat that as
+            // success instead of producing a false startup warning.
+            if (Bukkit.getAdvancement(key) != null) {
+                loadedKeys.add(key);
+                if (SFAdvancements.getMainConfig().getBoolean("debug")) {
+                    SFAdvancements.info("Reusing concurrently loaded advancement " + key);
+                }
+                return;
+            }
             SFAdvancements.warn("Could not register advancement " + key + ": " + e.getMessage());
         }
     }
