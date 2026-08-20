@@ -6,15 +6,15 @@ import me.char321.sfadvancements.core.criteria.progress.PlayerProgress;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * should really be named progress manager or something
  */
 public class AdvManager {
-    private final Map<UUID, PlayerProgress> playerMap = new HashMap<>();
+    private final Map<UUID, PlayerProgress> playerMap = new ConcurrentHashMap<>();
 
     public boolean isCompleted(Player player, Advancement advancement) {
         return isCompleted(player.getUniqueId(), advancement);
@@ -46,8 +46,8 @@ public class AdvManager {
     }
 
     public void save() throws IOException {
-        for (Map.Entry<UUID, PlayerProgress> entry : playerMap.entrySet()) {
-            entry.getValue().save(); //someone please tell me if this can cause a concurrentmodificationexception
+        for (PlayerProgress progress : playerMap.values()) {
+            progress.save();
         }
     }
 }
