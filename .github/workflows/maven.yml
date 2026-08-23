@@ -37,7 +37,7 @@ jobs:
       - name: Build with Maven against Paper 26.2 and Slimefun Legacy
         run: >-
           mvn --batch-mode clean package
-          -Dpaper.version=26.2.build.+
+          -Dpaper.version=26.2.build.111-stable
           -Dslimefun.groupId=com.github.slimefun
           -Dslimefun.artifactId=Slimefun
           -Dslimefun.version=ALBION-SNAPSHOT
