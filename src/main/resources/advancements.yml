@@ -138,7 +138,7 @@ carbonado:
     name: "&aShiny darkness"
     lore:
       - "Create a carbonado diamond"
-  frame_type: CHALLENGER
+  frame_type: CHALLENGE
   name: "&a[Shiny darkness]"
   criteria:
     carbonado:
@@ -188,3 +188,231 @@ who_asked:
       type: search
       search: "who asked"
   hidden: true
+
+carbon_age:
+  group: basic
+  parent: dust
+  display:
+    type: CARBON
+    name: "&eCarbon Age"
+    lore:
+      - "Obtain carbon"
+  name: "&e[Carbon Age]"
+  criteria:
+    carbon:
+      name: "Obtain carbon"
+      type: inventory
+      item:
+        type: CARBON
+
+reinforced_engineering:
+  group: basic
+  parent: carbon_age
+  display:
+    type: REINFORCED_ALLOY_INGOT
+    name: "&bReinforced Engineering"
+    lore:
+      - "Forge a reinforced alloy ingot"
+  frame_type: GOAL
+  name: "&b[Reinforced Engineering]"
+  criteria:
+    alloy:
+      name: "Obtain reinforced alloy"
+      type: inventory
+      item:
+        type: REINFORCED_ALLOY_INGOT
+
+portable_storage:
+  group: basic
+  parent: portable_workbench
+  display:
+    type: SMALL_BACKPACK
+    name: "&aPack It Up"
+    lore:
+      - "Obtain your first Slimefun backpack"
+  name: "&a[Pack It Up]"
+  criteria:
+    backpack:
+      name: "Obtain a small backpack"
+      type: inventory
+      item:
+        type: SMALL_BACKPACK
+
+deep_storage:
+  group: basic
+  parent: portable_storage
+  display:
+    type: RADIANT_BACKPACK
+    name: "&dBottomless Pockets"
+    lore:
+      - "Obtain a radiant backpack"
+  frame_type: CHALLENGE
+  name: "&d[Bottomless Pockets]"
+  criteria:
+    backpack:
+      name: "Obtain a radiant backpack"
+      type: inventory
+      item:
+        type: RADIANT_BACKPACK
+
+electric_motor:
+  group: electric
+  parent: electricity
+  display:
+    type: ELECTRIC_MOTOR
+    name: "&eMotorized"
+    lore:
+      - "Obtain an electric motor"
+  name: "&e[Motorized]"
+  criteria:
+    motor:
+      name: "Obtain an electric motor"
+      type: inventory
+      item:
+        type: ELECTRIC_MOTOR
+
+powered_core:
+  group: electric
+  parent: industrial_revolution
+  display:
+    type: POWER_CRYSTAL
+    name: "&cCrystalline Power"
+    lore:
+      - "Obtain a power crystal"
+  frame_type: GOAL
+  name: "&c[Crystalline Power]"
+  criteria:
+    crystal:
+      name: "Obtain a power crystal"
+      type: inventory
+      item:
+        type: POWER_CRYSTAL
+
+cargo_motor:
+  group: cargo
+  display:
+    type: CARGO_MOTOR
+    name: "&6Cargo Ready"
+    lore:
+      - "Obtain a cargo motor"
+  name: "&6[Cargo Ready]"
+  criteria:
+    motor:
+      name: "Obtain a cargo motor"
+      type: inventory
+      item:
+        type: CARGO_MOTOR
+
+cargo_network:
+  group: cargo
+  parent: cargo_motor
+  display:
+    type: CARGO_MANAGER
+    name: "&6Logistics Network"
+    lore:
+      - "Obtain a cargo manager"
+  frame_type: GOAL
+  name: "&6[Logistics Network]"
+  criteria:
+    manager:
+      name: "Obtain a cargo manager"
+      type: inventory
+      item:
+        type: CARGO_MANAGER
+
+gps_online:
+  group: technical
+  display:
+    type: GPS_TRANSMITTER
+    name: "&bGPS Online"
+    lore:
+      - "Obtain a GPS transmitter"
+  name: "&b[GPS Online]"
+  criteria:
+    transmitter:
+      name: "Obtain a GPS transmitter"
+      type: inventory
+      item:
+        type: GPS_TRANSMITTER
+
+gps_mastery:
+  group: technical
+  parent: gps_online
+  display:
+    type: GPS_TRANSMITTER_4
+    name: "&eGlobal Positioning"
+    lore:
+      - "Obtain an energized GPS transmitter"
+  frame_type: CHALLENGE
+  name: "&e[Global Positioning]"
+  criteria:
+    transmitter:
+      name: "Obtain an energized GPS transmitter"
+      type: inventory
+      item:
+        type: GPS_TRANSMITTER_4
+
+android_engineer:
+  group: technical
+  display:
+    type: PROGRAMMABLE_ANDROID
+    name: "&cAndroid Engineer"
+    lore:
+      - "Obtain a programmable android"
+  name: "&c[Android Engineer]"
+  criteria:
+    android:
+      name: "Obtain a programmable android"
+      type: inventory
+      item:
+        type: PROGRAMMABLE_ANDROID
+
+android_mastery:
+  group: technical
+  parent: android_engineer
+  display:
+    type: PROGRAMMABLE_ANDROID_3
+    name: "&eRise of the Machines"
+    lore:
+      - "Obtain an empowered programmable android"
+  frame_type: CHALLENGE
+  name: "&e[Rise of the Machines]"
+  criteria:
+    android:
+      name: "Obtain an empowered programmable android"
+      type: inventory
+      item:
+        type: PROGRAMMABLE_ANDROID_3
+
+magic_eye:
+  group: magical
+  parent: ender_charms
+  display:
+    type: MAGIC_EYE_OF_ENDER
+    name: "&dEye of Magic"
+    lore:
+      - "Obtain a magical Eye of Ender"
+  frame_type: GOAL
+  name: "&d[Eye of Magic]"
+  criteria:
+    eye:
+      name: "Obtain a magical Eye of Ender"
+      type: inventory
+      item:
+        type: MAGIC_EYE_OF_ENDER
+
+take_flight:
+  group: other
+  display:
+    type: DURALUMIN_JETPACK
+    name: "&bTake Flight"
+    lore:
+      - "Obtain a duralumin jetpack"
+  frame_type: GOAL
+  name: "&b[Take Flight]"
+  criteria:
+    jetpack:
+      name: "Obtain a duralumin jetpack"
+      type: inventory
+      item:
+        type: DURALUMIN_JETPACK

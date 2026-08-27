@@ -28,7 +28,6 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,73 +53,57 @@ public class VanillaHook {
     public void reload() {
         if (!initialized) {
             init();
+            return;
         }
-        removeExistingAdvancements();
+
+        // Paper persists advancements loaded through UnsafeValues. Do not call removeAdvancement here:
+        // modern Paper removes only the persisted copy while leaving the live registry entry present
+        // until a full data reload. Reusing that live entry would then make it disappear after restart.
         loadedKeys.clear();
         logVanillaRootBackground();
         registerGroups();
         registerAdvancements();
+        verifyRegistrations();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             syncProgress(p);
         }
     }
 
-    private void removeExistingAdvancements() {
-        Set<NamespacedKey> keysToRemove = new HashSet<>();
+    private void registerGroups() {
         for (AdvancementGroup group : SFAdvancements.getRegistry().getAdvancementGroups()) {
-            keysToRemove.add(Utils.keyOf(group.getId()));
-        }
-        for (Advancement adv : SFAdvancements.getRegistry().getAdvancements().values()) {
-            keysToRemove.add(adv.getKey());
-        }
-        Bukkit.advancementIterator().forEachRemaining(adv -> {
-            NamespacedKey key = adv.getKey();
-            if (Utils.keyIsSFA(key)) {
-                keysToRemove.add(key);
-            }
-        });
-
-        boolean removedAny = false;
-        for (NamespacedKey key : keysToRemove) {
-            try {
-                if (Bukkit.getUnsafe().removeAdvancement(key)) {
-                    removedAny = true;
-                }
-            } catch (Exception e) {
-                SFAdvancements.warn("Could not remove advancement " + key + ": " + e.getMessage());
-            }
-        }
-        if (removedAny && SFAdvancements.getMainConfig().getBoolean("reload-data-on-adv-remove")) {
-            Bukkit.reloadData();
+            registerGroup(group);
         }
     }
 
-    private void registerGroups() {
-        for (AdvancementGroup group : SFAdvancements.getRegistry().getAdvancementGroups()) {
-            NamespacedKey key = Utils.keyOf(group.getId());
-            ItemStack item = safeDisplayItem(group.getDisplayItem());
-            ItemMeta meta = item.getItemMeta();
-            JsonElement title = meta != null && meta.hasDisplayName()
-                    ? legacyToJson(meta.getDisplayName())
-                    : componentToJson(Utils.getItemName(item));
-            List<String> lore = meta != null && meta.getLore() != null ? meta.getLore() : new ArrayList<>();
-            String description = String.join("\n", lore);
-            String rawBackground = group.getBackground();
-            String resolvedBackground = resolveBackground(rawBackground, backgroundStyle);
-            JsonObject json = buildAdvancementJson(
-                    null,
-                    item,
-                    title,
-                    description,
-                    group.getFrameType(),
-                    false,
-                    resolvedBackground,
-                    false);
-            logGroupDebug(group.getId(), rawBackground, resolvedBackground, key, json);
-            loadAdvancement(key, json);
-            logResolvedBackgroundFromServer(key);
+    private void registerGroup(AdvancementGroup group) {
+        NamespacedKey key = Utils.keyOf(group.getId());
+        if (loadedKeys.contains(key) && Bukkit.getAdvancement(key) != null) {
+            return;
         }
+        loadedKeys.remove(key);
+
+        ItemStack item = safeDisplayItem(group.getDisplayItem());
+        ItemMeta meta = item.getItemMeta();
+        JsonElement title = meta != null && meta.hasDisplayName()
+                ? legacyToJson(meta.getDisplayName())
+                : componentToJson(Utils.getItemName(item));
+        List<String> lore = meta != null && meta.getLore() != null ? meta.getLore() : new ArrayList<>();
+        String description = String.join("\n", lore);
+        String rawBackground = group.getBackground();
+        String resolvedBackground = resolveBackground(rawBackground, backgroundStyle);
+        JsonObject json = buildAdvancementJson(
+                null,
+                item,
+                title,
+                description,
+                group.getFrameType(),
+                false,
+                resolvedBackground,
+                false);
+        logGroupDebug(group.getId(), rawBackground, resolvedBackground, key, json);
+        loadAdvancement(key, json);
+        logResolvedBackgroundFromServer(key);
     }
 
     private void registerAdvancements() {
@@ -130,16 +113,19 @@ public class VanillaHook {
     }
 
     private void registerAdvancement(Advancement advancement) {
-        if (advancement == null)
+        if (advancement == null) {
             return;
-        if (loadedKeys.contains(advancement.getKey()))
+        }
+
+        NamespacedKey key = advancement.getKey();
+        if (loadedKeys.contains(key) && Bukkit.getAdvancement(key) != null) {
             return;
+        }
+        loadedKeys.remove(key);
+
         NamespacedKey parentKey = advancement.getParent();
-        if (parentKey != null && !loadedKeys.contains(parentKey)) {
-            Advancement parent = Utils.fromKey(parentKey);
-            if (parent != null) {
-                registerAdvancement(parent);
-            }
+        if (parentKey != null && Bukkit.getAdvancement(parentKey) == null) {
+            ensureRegistered(parentKey);
         }
 
         ItemStack item = safeDisplayItem(advancement.getDisplay());
@@ -157,7 +143,79 @@ public class VanillaHook {
                 advancement.isHidden(),
                 null,
                 true);
-        loadAdvancement(advancement.getKey(), json);
+        loadAdvancement(key, json);
+    }
+
+    private void verifyRegistrations() {
+        int expected = SFAdvancements.getRegistry().getAdvancementGroups().size()
+                + SFAdvancements.getRegistry().getAdvancements().size();
+        int repaired = 0;
+        int available = 0;
+
+        for (AdvancementGroup group : SFAdvancements.getRegistry().getAdvancementGroups()) {
+            NamespacedKey key = Utils.keyOf(group.getId());
+            if (Bukkit.getAdvancement(key) == null) {
+                loadedKeys.remove(key);
+                registerGroup(group);
+                if (Bukkit.getAdvancement(key) != null) {
+                    repaired++;
+                }
+            }
+            if (Bukkit.getAdvancement(key) != null) {
+                available++;
+            }
+        }
+
+        for (Advancement advancement : SFAdvancements.getRegistry().getAdvancements().values()) {
+            NamespacedKey key = advancement.getKey();
+            if (Bukkit.getAdvancement(key) == null) {
+                loadedKeys.remove(key);
+                registerAdvancement(advancement);
+                if (Bukkit.getAdvancement(key) != null) {
+                    repaired++;
+                }
+            }
+            if (Bukkit.getAdvancement(key) != null) {
+                available++;
+            }
+        }
+
+        if (available == expected) {
+            String suffix = repaired > 0 ? " (repaired " + repaired + " missing entries)" : "";
+            SFAdvancements.info("Verified " + available + "/" + expected
+                    + " Slimefun advancements registered" + suffix + ".");
+        } else {
+            SFAdvancements.warn("Only " + available + "/" + expected
+                    + " Slimefun advancements are registered after repair attempts.");
+        }
+    }
+
+    @Nullable
+    private org.bukkit.advancement.Advancement ensureRegistered(NamespacedKey key) {
+        org.bukkit.advancement.Advancement existing = Bukkit.getAdvancement(key);
+        if (existing != null) {
+            loadedKeys.add(key);
+            return existing;
+        }
+
+        loadedKeys.remove(key);
+
+        for (AdvancementGroup group : SFAdvancements.getRegistry().getAdvancementGroups()) {
+            if (Utils.keyOf(group.getId()).equals(key)) {
+                registerGroup(group);
+                return Bukkit.getAdvancement(key);
+            }
+        }
+
+        Advancement advancement = Utils.fromKey(key);
+        if (advancement != null) {
+            NamespacedKey parentKey = advancement.getParent();
+            if (parentKey != null && Bukkit.getAdvancement(parentKey) == null) {
+                ensureRegistered(parentKey);
+            }
+            registerAdvancement(advancement);
+        }
+        return Bukkit.getAdvancement(key);
     }
 
     private void logGroupDebug(String groupId, String rawBackground, String resolvedBackground, NamespacedKey key,
@@ -201,6 +259,8 @@ public class VanillaHook {
         }
 
         try {
+            // The legacy two-argument API persists by default on modern Paper. Keeping this call also
+            // preserves compatibility with servers whose Paper API predates the explicit persist flag.
             org.bukkit.advancement.Advancement loaded = Bukkit.getUnsafe().loadAdvancement(key, json.toString());
             if (loaded != null) {
                 loadedKeys.add(key);
@@ -693,9 +753,9 @@ public class VanillaHook {
     }
 
     public void complete(Player p, NamespacedKey key) {
-        org.bukkit.advancement.Advancement advancement = Bukkit.getAdvancement(key);
+        org.bukkit.advancement.Advancement advancement = ensureRegistered(key);
         if (advancement == null) {
-            SFAdvancements.warn("Attempted to complete unregistered advancement " + key);
+            SFAdvancements.warn("Attempted to complete advancement " + key + " but it could not be registered");
             return;
         }
         Utils.runSync(() -> {
@@ -707,9 +767,9 @@ public class VanillaHook {
     }
 
     public void revoke(Player p, NamespacedKey key) {
-        org.bukkit.advancement.Advancement advancement = Bukkit.getAdvancement(key);
+        org.bukkit.advancement.Advancement advancement = ensureRegistered(key);
         if (advancement == null) {
-            SFAdvancements.warn("Attempted to revoke unregistered advancement " + key);
+            SFAdvancements.warn("Attempted to revoke advancement " + key + " but it could not be registered");
             return;
         }
         Utils.runSync(() -> {
@@ -718,6 +778,5 @@ public class VanillaHook {
                 progress.revokeCriteria("impossible");
             }
         });
-
     }
 }

@@ -20,6 +20,7 @@ import net.guizhanss.minecraft.guizhanlib.updater.GuizhanUpdater;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -28,7 +29,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -154,10 +160,7 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
 
     public void loadGroups() {
         File groupFile = new File(getDataFolder(), "groups.yml");
-        if (!groupFile.exists()) {
-            saveResource("groups.yml", false);
-        }
-        groupConfig = YamlConfiguration.loadConfiguration(groupFile);
+        groupConfig = loadConfigWithBundledDefaults(groupFile, "groups.yml", "advancement group");
         for (String key : groupConfig.getKeys(false)) {
             String background = groupConfig.getString(key + ".background", "SLIME_BLOCK");
             ItemStack display = ConfigUtils.getItem(groupConfig, key + ".display");
@@ -169,16 +172,88 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
 
     public void loadAdvancements() {
         File advancementsFile = new File(getDataFolder(), "advancements.yml");
-        if (!advancementsFile.exists()) {
-            saveResource("advancements.yml", false);
-        }
-        advancementConfig = YamlConfiguration.loadConfiguration(advancementsFile);
+        advancementConfig = loadConfigWithBundledDefaults(advancementsFile, "advancements.yml", "advancement");
         for (String key : advancementConfig.getKeys(false)) {
-            AdvancementBuilder builder = AdvancementBuilder.loadFromConfig(key,
-                    advancementConfig.getConfigurationSection(key));
+            ConfigurationSection section = advancementConfig.getConfigurationSection(key);
+            if (section == null) {
+                warn("Advancement " + key + " is not a configuration section; skipping it");
+                continue;
+            }
+            AdvancementBuilder builder = AdvancementBuilder.loadFromConfig(key, section);
             if (builder != null) {
                 builder.register();
             }
+        }
+    }
+
+    private YamlConfiguration loadConfigWithBundledDefaults(File file, String resourceName, String label) {
+        if (!file.exists()) {
+            saveResource(resourceName, false);
+        }
+
+        YamlConfiguration live = YamlConfiguration.loadConfiguration(file);
+        int restored = restoreMissingTopLevelDefaults(live, resourceName);
+        if (restored <= 0) {
+            return live;
+        }
+
+        try {
+            backupBeforeDefaultRestore(file);
+            live.save(file);
+            info("Restored " + restored + " missing default " + (restored == 1 ? label : label + "s")
+                    + " from the bundled " + resourceName + " without overwriting existing entries.");
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Could not save restored defaults to " + file.getName(), e);
+        }
+        return live;
+    }
+
+    private int restoreMissingTopLevelDefaults(YamlConfiguration live, String resourceName) {
+        try (InputStream stream = getResource(resourceName)) {
+            if (stream == null) {
+                warn("Bundled default resource " + resourceName + " was not found");
+                return 0;
+            }
+
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(stream, StandardCharsets.UTF_8));
+            int restored = 0;
+            for (String key : defaults.getKeys(false)) {
+                if (live.contains(key)) {
+                    continue;
+                }
+
+                ConfigurationSection source = defaults.getConfigurationSection(key);
+                if (source != null) {
+                    ConfigurationSection target = live.createSection(key);
+                    copySection(source, target);
+                } else {
+                    live.set(key, defaults.get(key));
+                }
+                restored++;
+            }
+            return restored;
+        } catch (IOException e) {
+            getLogger().log(Level.WARNING, "Could not read bundled defaults from " + resourceName, e);
+            return 0;
+        }
+    }
+
+    private static void copySection(ConfigurationSection source, ConfigurationSection target) {
+        for (String key : source.getKeys(false)) {
+            ConfigurationSection child = source.getConfigurationSection(key);
+            if (child != null) {
+                copySection(child, target.createSection(key));
+            } else {
+                target.set(key, source.get(key));
+            }
+        }
+    }
+
+    private void backupBeforeDefaultRestore(File file) throws IOException {
+        Path backup = file.toPath().resolveSibling(file.getName() + ".pre-1.0.4.bak");
+        if (!Files.exists(backup)) {
+            Files.copy(file.toPath(), backup, StandardCopyOption.COPY_ATTRIBUTES);
         }
     }
 
