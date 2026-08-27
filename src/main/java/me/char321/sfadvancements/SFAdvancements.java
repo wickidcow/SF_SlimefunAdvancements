@@ -173,6 +173,8 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
     public void loadAdvancements() {
         File advancementsFile = new File(getDataFolder(), "advancements.yml");
         advancementConfig = loadConfigWithBundledDefaults(advancementsFile, "advancements.yml", "advancement");
+        migrateKnownAdvancementDefaults(advancementsFile);
+
         for (String key : advancementConfig.getKeys(false)) {
             ConfigurationSection section = advancementConfig.getConfigurationSection(key);
             if (section == null) {
@@ -236,6 +238,22 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
         } catch (IOException e) {
             getLogger().log(Level.WARNING, "Could not read bundled defaults from " + resourceName, e);
             return 0;
+        }
+    }
+
+    private void migrateKnownAdvancementDefaults(File advancementsFile) {
+        String carbonadoFrame = advancementConfig.getString("carbonado.frame_type");
+        if (carbonadoFrame == null || !carbonadoFrame.equalsIgnoreCase("CHALLENGER")) {
+            return;
+        }
+
+        try {
+            backupBeforeDefaultRestore(advancementsFile);
+            advancementConfig.set("carbonado.frame_type", "CHALLENGE");
+            advancementConfig.save(advancementsFile);
+            info("Corrected legacy carbonado frame type CHALLENGER -> CHALLENGE.");
+        } catch (IOException e) {
+            getLogger().log(Level.WARNING, "Could not migrate the legacy carbonado frame type", e);
         }
     }
 
