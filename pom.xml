@@ -6,7 +6,7 @@
 
     <groupId>me.char321</groupId>
     <artifactId>sfadvancements</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
     <name>SlimefunAdvancements</name>
@@ -164,13 +164,6 @@
             <artifactId>MockBukkit-v1.18</artifactId>
             <version>1.24.1</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>net.guizhanss</groupId>
-            <artifactId>GuizhanLibPlugin</artifactId>
-            <version>2.5.0</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
