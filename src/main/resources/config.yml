@@ -1,5 +1,5 @@
-# Enable automatic update checks.
-auto-update: true
+# SlimefunAdvancements Legacy 1.0.5 no longer uses GuizhanLibPlugin for update checks.
+# Updates are distributed through this fork's GitHub releases.
 
 # Add custom advancements to the vanilla advancements menu (experimental).
 use-advancements-api: true
