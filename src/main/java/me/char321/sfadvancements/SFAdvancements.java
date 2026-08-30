@@ -16,7 +16,6 @@ import me.char321.sfadvancements.core.tasks.AutoSaveTask;
 import me.char321.sfadvancements.util.ConfigUtils;
 import me.char321.sfadvancements.util.Utils;
 import me.char321.sfadvancements.vanilla.VanillaHook;
-import net.guizhanss.minecraft.guizhanlib.updater.GuizhanUpdater;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
@@ -59,19 +58,10 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
     public void onEnable() {
         instance = this;
 
-        if (!getServer().getPluginManager().isPluginEnabled("GuizhanLibPlugin")) {
-            getLogger().log(Level.SEVERE, "This plugin requires GuizhanLibPlugin to run!");
-            getLogger().log(Level.SEVERE, "Download it from: https://50l.cc/gzlib");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
         config = new Config(this);
         enforceRecipeSafeConfig();
 
         detectCapabilities();
-
-        autoUpdate();
 
         getCommand("sfadvancements").setExecutor(new SFACommand(this));
 
@@ -123,13 +113,6 @@ public final class SFAdvancements extends JavaPlugin implements SlimefunAddon {
             multiBlockCraftEvent = true;
         } catch (ClassNotFoundException e) {
             multiBlockCraftEvent = false;
-        }
-    }
-
-    private void autoUpdate() {
-        if (config.getBoolean("auto-update") && getDescription().getVersion().startsWith("Build")) {
-            info("Checking for updates...");
-            GuizhanUpdater.start(this, this.getFile(), "SlimefunGuguProject", "SlimefunAdvancements", "main");
         }
     }
 
