@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+env:
+  RELEASE_VERSION: "1.0.6"
+  OUTPUT_NAME: "SF_SlimefunAdvancements1.0.6.jar"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,23 +38,74 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew publishToMavenLocal -PprojectVersion=ALBION-SNAPSHOT --no-daemon
-      - name: Build with Maven against Paper 26.2 and Slimefun Legacy
+      - name: Verify dependency cleanup remains intact
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq '<version>1.0.6</version>' pom.xml
+          grep -Fq '<paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>' pom.xml
+          if grep -R --line-number -E 'GuizhanLibPlugin|GuizhanUpdater|EnchantmentX' src/main/java src/main/resources pom.xml; then
+            echo 'GuizhanLib startup/runtime dependency has returned.' >&2
+            exit 1
+          fi
+      - name: Run existing test lifecycle on Paper 26.2 primary
         run: >-
-          mvn --batch-mode clean package
-          -Dpaper.version=26.2.build.111-stable
+          mvn --batch-mode clean test
+          -Dpaper.version=26.2.build.112-stable
           -Dslimefun.groupId=com.github.slimefun
           -Dslimefun.artifactId=Slimefun
           -Dslimefun.version=ALBION-SNAPSHOT
-      - name: Resolve build output
+      - name: Verify Paper 1.21.11 baseline compilation
+        run: >-
+          mvn --batch-mode -DskipTests clean package
+          -Dpaper.version=1.21.11-R0.1-SNAPSHOT
+          -Dslimefun.groupId=com.github.slimefun
+          -Dslimefun.artifactId=Slimefun
+          -Dslimefun.version=ALBION-SNAPSHOT
+      - name: Verify Paper 26.2 primary compilation
+        run: >-
+          mvn --batch-mode -DskipTests clean package
+          -Dpaper.version=26.2.build.112-stable
+          -Dslimefun.groupId=com.github.slimefun
+          -Dslimefun.artifactId=Slimefun
+          -Dslimefun.version=ALBION-SNAPSHOT
+      - name: Verify Paper 26.3 alpha compilation
+        run: >-
+          mvn --batch-mode -DskipTests clean package
+          -Dpaper.version=26.3-rc-3.build.1-alpha
+          -Dslimefun.groupId=com.github.slimefun
+          -Dslimefun.artifactId=Slimefun
+          -Dslimefun.version=ALBION-SNAPSHOT
+      - name: Build universal release JAR from Paper 1.21.11
+        run: >-
+          mvn --batch-mode -DskipTests clean package
+          -Dpaper.version=1.21.11-R0.1-SNAPSHOT
+          -Dslimefun.groupId=com.github.slimefun
+          -Dslimefun.artifactId=Slimefun
+          -Dslimefun.version=ALBION-SNAPSHOT
+      - name: Resolve and verify build output
         id: project
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
-          JAR="target/SF_SlimefunAdvancements${VERSION}.jar"
+          JAR="target/${OUTPUT_NAME}"
           test -s "$JAR"
           jar tf "$JAR" | grep -Fxq 'plugin.yml'
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          unzip -p "$JAR" plugin.yml | grep -Fq "version: ${RELEASE_VERSION}"
+          python3 - <<'PY'
+          import pathlib, struct, zipfile
+          jar = pathlib.Path('target/SF_SlimefunAdvancements1.0.6.jar')
+          max_major = 0
+          with zipfile.ZipFile(jar) as zf:
+              for name in zf.namelist():
+                  if name.endswith('.class'):
+                      data = zf.read(name)[:8]
+                      if data[:4] == b'\xca\xfe\xba\xbe':
+                          max_major = max(max_major, struct.unpack('>H', data[6:8])[0])
+          print(f'{jar}: maximum class major version {max_major}')
+          if max_major > 65:
+              raise SystemExit('JAR contains classes newer than Java 21 bytecode')
+          PY
           echo "jar=${JAR}" >> "$GITHUB_OUTPUT"
           sha256sum "$JAR"
       - name: Upload raw JAR artifact
@@ -64,18 +119,15 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.project.outputs.version }}
           JAR: ${{ steps.project.outputs.jar }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${VERSION}"; fi
-          TITLE="SF_SlimefunAdvancements ${VERSION}"
-          NOTES_FILE=".github/release-notes/${TAG}.md"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${RELEASE_VERSION}"; fi
+          TITLE="SF_SlimefunAdvancements ${RELEASE_VERSION}"
+          NOTES="SlimefunAdvancements 1.0.6 adds Paper 26.3 alpha compatibility validation while preserving the Paper 1.21.11 / Java 21 universal release baseline, Paper 26.2 primary target, existing advancement behavior, optional JustEnoughGuide integration, and the GuizhanLib-free runtime cleanup."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
-            if [ -f "$NOTES_FILE" ]; then gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"; fi
-          elif [ -f "$NOTES_FILE" ]; then
-            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --title "$TITLE" --notes-file "$NOTES_FILE"
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES"
           else
-            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --title "$TITLE" --generate-notes
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES"
           fi
