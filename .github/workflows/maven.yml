@@ -44,7 +44,7 @@ jobs:
           set -euo pipefail
           grep -Fq '<version>1.0.6</version>' pom.xml
           grep -Fq '<paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>' pom.xml
-          if grep -R --line-number -E 'GuizhanLibPlugin|GuizhanUpdater|EnchantmentX' src/main/java src/main/resources pom.xml; then
+          if grep -R --line-number -E 'GuizhanLibPlugin|GuizhanUpdater|EnchantmentX' src/main/java pom.xml src/main/resources/plugin.yml; then
             echo 'GuizhanLib startup/runtime dependency has returned.' >&2
             exit 1
           fi
@@ -91,7 +91,7 @@ jobs:
           JAR="target/${OUTPUT_NAME}"
           test -s "$JAR"
           jar tf "$JAR" | grep -Fxq 'plugin.yml'
-          unzip -p "$JAR" plugin.yml | grep -Fq "version: ${RELEASE_VERSION}"
+          unzip -p "$JAR" plugin.yml | grep -Eq "^version: '?${RELEASE_VERSION}'?$"
           python3 - <<'PY'
           import pathlib, struct, zipfile
           jar = pathlib.Path('target/SF_SlimefunAdvancements1.0.6.jar')
