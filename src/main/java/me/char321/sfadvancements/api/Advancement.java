@@ -4,10 +4,9 @@ import me.char321.sfadvancements.SFAdvancements;
 import me.char321.sfadvancements.api.criteria.Criterion;
 import me.char321.sfadvancements.api.reward.Reward;
 import me.char321.sfadvancements.util.Utils;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.hover.content.Text;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -23,6 +22,8 @@ import java.util.Objects;
  * when all of an advancement's criteria are completed, it becomes shiny oooh
  */
 public class Advancement {
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+
     private final NamespacedKey key;
     private final NamespacedKey parent;
     private final AdvancementGroup group;
@@ -158,12 +159,10 @@ public class Advancement {
     }
 
     private void broadcastMessage(Player p) {
-        BaseComponent component = new TextComponent();
-        component.addExtra(p.getName() + " has made the advancement ");
-        BaseComponent sub = new TextComponent(getName());
-        sub.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(getDescription())));
-        component.addExtra(sub);
-        Bukkit.spigot().broadcast(component);
+        Component advancementName = LEGACY.deserialize(getName())
+                .hoverEvent(HoverEvent.showText(LEGACY.deserialize(getDescription())));
+        Bukkit.broadcast(Component.text(p.getName() + " has made the advancement ")
+                .append(advancementName));
     }
 
     @Override
