@@ -1,7 +1,5 @@
 package me.char321.sfadvancements.core.criteria.completer;
 
-import com.balugaq.jeg.api.patches.JEGGuideEntry;
-import com.balugaq.jeg.api.patches.JEGGuideHistory;
 import io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile;
 import io.github.thebusybiscuit.slimefun4.core.guide.GuideHistory;
 import me.char321.sfadvancements.SFAdvancements;
@@ -20,16 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 public class SearchCriterionCompleter implements CriterionCompleter {
-    private static boolean jegSupported;
-
-    static {
-        try {
-            Class.forName("com.balugaq.jeg.api.patches.JEGGuideHistory");
-            jegSupported = true;
-        } catch (ClassNotFoundException e) {
-            jegSupported = false;
-        }
-    }
+    private static final String JEG_HISTORY = "com.balugaq.jeg.api.patches.JEGGuideHistory";
+    private static final String JEG_SEARCH_ENTRY =
+        "com.balugaq.jeg.api.patches.JEGGuideEntry$SearchTermEntry";
 
     private final Map<String, List<SearchCriterion>> criteria = new HashMap<>();
 
@@ -39,38 +30,67 @@ public class SearchCriterionCompleter implements CriterionCompleter {
         try {
             queueField = GuideHistory.class.getDeclaredField("queue");
             queueField.setAccessible(true);
-            getIndexedObject = Class.forName("io.github.thebusybiscuit.slimefun4.core.guide.GuideEntry").getDeclaredMethod("getIndexedObject");
+            getIndexedObject = Class.forName("io.github.thebusybiscuit.slimefun4.core.guide.GuideEntry")
+                .getDeclaredMethod("getIndexedObject");
             getIndexedObject.setAccessible(true);
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
             return;
         }
 
+        Class<?> jegHistoryClass = null;
+        Class<?> jegSearchEntryClass = null;
+        Method jegGetLastEntry = null;
+        Method jegEntryGet = null;
+        try {
+            jegHistoryClass = Class.forName(JEG_HISTORY);
+            jegSearchEntryClass = Class.forName(JEG_SEARCH_ENTRY);
+            jegGetLastEntry = jegHistoryClass.getMethod("getLastEntry", boolean.class);
+            jegEntryGet = jegSearchEntryClass.getMethod("get");
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // JEG is an optional soft-dependency. Classic Slimefun history remains the fallback.
+        }
+
+        final Class<?> resolvedJegHistoryClass = jegHistoryClass;
+        final Class<?> resolvedJegSearchEntryClass = jegSearchEntryClass;
+        final Method resolvedJegGetLastEntry = jegGetLastEntry;
+        final Method resolvedJegEntryGet = jegEntryGet;
+
         Bukkit.getScheduler().runTaskTimer(SFAdvancements.instance(), () -> {
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                 PlayerProfile.get(onlinePlayer, profile -> {
                     // In some environments, two calls to profile.getGuideHistory() may return different
-                    // implementations and cause a ClassCastException. Read it once and reuse the result.
+                    // implementations. Read it once and route by the actual runtime type.
                     GuideHistory history = profile.getGuideHistory();
-                    if (jegSupported) {
-                        if (history instanceof JEGGuideHistory jeg) {
-                            var entry = jeg.getLastEntry(false);
-                            if (entry instanceof JEGGuideEntry.SearchTermEntry searchTermEntry) {
-                                Utils.runSync(() -> onSearch(onlinePlayer, searchTermEntry.get()));
-                            }
-                        }
-                    } else {
+                    if (resolvedJegHistoryClass != null
+                        && resolvedJegSearchEntryClass != null
+                        && resolvedJegGetLastEntry != null
+                        && resolvedJegEntryGet != null
+                        && resolvedJegHistoryClass.isInstance(history)) {
                         try {
-                            Deque<?> queue = (Deque<?>) queueField.get(history);
-                            if (!queue.isEmpty()) {
-                                Object str = getIndexedObject.invoke(queue.getLast());
-                                if (str instanceof String) {
-                                    Utils.runSync(() -> onSearch(onlinePlayer, (String) str));
+                            Object entry = resolvedJegGetLastEntry.invoke(history, false);
+                            if (entry != null && resolvedJegSearchEntryClass.isInstance(entry)) {
+                                Object search = resolvedJegEntryGet.invoke(entry);
+                                if (search instanceof String term) {
+                                    Utils.runSync(() -> onSearch(onlinePlayer, term));
                                 }
                             }
                         } catch (ReflectiveOperationException e) {
                             e.printStackTrace();
                         }
+                        return;
+                    }
+
+                    try {
+                        Deque<?> queue = (Deque<?>) queueField.get(history);
+                        if (!queue.isEmpty()) {
+                            Object str = getIndexedObject.invoke(queue.getLast());
+                            if (str instanceof String term) {
+                                Utils.runSync(() -> onSearch(onlinePlayer, term));
+                            }
+                        }
+                    } catch (ReflectiveOperationException e) {
+                        e.printStackTrace();
                     }
                 });
             }
