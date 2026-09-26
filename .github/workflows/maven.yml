@@ -48,11 +48,17 @@ jobs:
             echo 'GuizhanLib startup/runtime dependency has returned.' >&2
             exit 1
           fi
-          if grep -Fq 'com.github.balugaq</groupId><artifactId>JustEnoughGuide' pom.xml; then
-            echo 'Obsolete upstream JEG compile dependency has returned.' >&2
+          if grep -Eq '<artifactId>(JustEnoughGuide|SF_JustEnoughGuide)</artifactId>' pom.xml; then
+            echo 'JEG must remain an optional runtime soft-dependency, not a Maven compile dependency.' >&2
             exit 1
           fi
-          grep -Fq '<groupId>com.github.wickidcow</groupId><artifactId>SF_JustEnoughGuide</artifactId><version>v2.1.67</version>' pom.xml
+          SEARCH=src/main/java/me/char321/sfadvancements/core/criteria/completer/SearchCriterionCompleter.java
+          grep -Fq 'com.balugaq.jeg.api.patches.JEGGuideHistory' "$SEARCH"
+          grep -Fq 'Class.forName(JEG_HISTORY)' "$SEARCH"
+          if grep -Eq '^import com\.balugaq\.jeg\.' "$SEARCH"; then
+            echo 'Direct JEG source imports have returned.' >&2
+            exit 1
+          fi
           grep -Fq '<fork>true</fork>' pom.xml
       - name: Run existing test lifecycle on Paper 26.2 primary
         run: >-
