@@ -49,9 +49,10 @@ jobs:
             exit 1
           fi
           if grep -Fq 'com.github.balugaq</groupId><artifactId>JustEnoughGuide' pom.xml; then
-            echo 'Unused stale JEG compile dependency has returned.' >&2
+            echo 'Obsolete upstream JEG compile dependency has returned.' >&2
             exit 1
           fi
+          grep -Fq '<groupId>com.github.wickidcow</groupId><artifactId>SF_JustEnoughGuide</artifactId><version>v2.1.67</version>' pom.xml
           grep -Fq '<fork>true</fork>' pom.xml
       - name: Run existing test lifecycle on Paper 26.2 primary
         run: >-
