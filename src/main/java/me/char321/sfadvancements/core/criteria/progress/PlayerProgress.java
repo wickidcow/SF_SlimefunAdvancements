@@ -41,6 +41,7 @@ import java.util.logging.Level;
 public class PlayerProgress {
     private final UUID player;
     private final Map<NamespacedKey, AdvancementProgress> progressMap = new HashMap<>();
+    private JsonObject retainedDocument = new JsonObject();
 
     private PlayerProgress(UUID player) {
         this.player = player;
@@ -151,6 +152,7 @@ public class PlayerProgress {
     }
 
     private void loadFromObject(JsonObject object) {
+        Map<NamespacedKey, AdvancementProgress> loaded = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
             NamespacedKey advkey = NamespacedKey.fromString(entry.getKey());
             if (advkey == null || !Utils.isValidAdvancement(advkey)) {
@@ -163,9 +165,14 @@ public class PlayerProgress {
             }
 
             AdvancementProgress newprogress = new AdvancementProgress(advkey);
-            progressMap.put(advkey, newprogress);
             newprogress.loadFromObject(entry.getValue().getAsJsonObject());
+            loaded.put(advkey, newprogress);
         }
+        // Publish only a complete load; failed primary/backup attempts must not mix partial state.
+        JsonObject retained = object.deepCopy();
+        progressMap.clear();
+        progressMap.putAll(loaded);
+        retainedDocument = retained;
     }
 
     public synchronized void save() throws IOException {
@@ -195,22 +202,22 @@ public class PlayerProgress {
     }
 
     private void writeProgressFile(File file) throws IOException {
+        JsonObject known = new JsonObject();
+        for (Map.Entry<NamespacedKey, AdvancementProgress> entry : progressMap.entrySet()) {
+            JsonObject advancement = new JsonObject();
+            advancement.addProperty("done", entry.getValue().done);
+            JsonObject criteria = new JsonObject();
+            for (CriteriaProgress criterion : entry.getValue().criteria) {
+                criteria.addProperty(criterion.id, criterion.progress);
+            }
+            advancement.add("criteria", criteria);
+            known.add(entry.getKey().toString(), advancement);
+        }
+        // A temporarily missing definition is not permission to delete its saved progress.
+        JsonObject complete = RetainedProgressDocument.merge(retainedDocument, known);
         try (JsonWriter writer = new JsonWriter(new BufferedWriter(
             new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8)))) {
-            writer.beginObject();
-            for (Map.Entry<NamespacedKey, AdvancementProgress> entry : progressMap.entrySet()) {
-                writer.name(entry.getKey().toString());
-                writer.beginObject();
-                writer.name("done").value(entry.getValue().done);
-                writer.name("criteria");
-                writer.beginObject();
-                for (CriteriaProgress criterion : entry.getValue().criteria) {
-                    writer.name(criterion.id).value(criterion.progress);
-                }
-                writer.endObject();
-                writer.endObject();
-            }
-            writer.endObject();
+            RetainedProgressDocument.write(complete, writer);
         }
     }
 
@@ -263,6 +270,7 @@ public class PlayerProgress {
                 SFAdvancements.logger().log(Level.WARNING,
                     "Backup advancement progress is also invalid for " + progress.player, backupError);
                 progress.progressMap.clear();
+                progress.retainedDocument = new JsonObject();
             }
         }
 
