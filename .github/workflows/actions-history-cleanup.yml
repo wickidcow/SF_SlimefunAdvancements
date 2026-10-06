@@ -1,0 +1,53 @@
+name: Milestone Actions History Cleanup
+on:
+  push:
+    paths: [".github/workflows/actions-history-cleanup.yml"]
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep release milestones
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/$REPO/releases?per_page=100" --jq '.[]|select(.draft==false)|.tag_name' > /tmp/releases || true
+          gh api --paginate "repos/$REPO/tags?per_page=100" --jq '.[]|[.name,.commit.sha]|@tsv' > /tmp/tags || true
+          awk -F '\t' '$1 ~ /^v?[0-9]+([.][0-9A-Za-z]+)*([_-][0-9A-Za-z.-]+)?$/ {print $1}' /tmp/tags > /tmp/versions || true
+          cat /tmp/releases /tmp/versions | sort -u > /tmp/keep_tags
+          awk -F '\t' 'NR==FNR{k[$1]=1;next}($1 in k){print $2}' /tmp/keep_tags /tmp/tags | sort -u > /tmp/keep_shas
+          gh api --paginate "repos/$REPO/actions/runs?per_page=100" --jq '.workflow_runs[]|[.id,.status,(.conclusion//""),.event,(.head_branch//""),(.head_sha//""),(.name//"")]|@tsv' > /tmp/runs
+          while IFS=$'\t' read -r id status conclusion event branch sha name; do
+            [[ "$id" == "$CURRENT_RUN_ID" ]] && continue
+            keep=false
+            if [[ "$status" == completed && "$conclusion" == success ]]; then
+              if ! printf '%s\n' "$name" | grep -Eiq 'test|smoke|compat|validat|verif|audit|check|runtime|regression|lint|compile|cleanup'; then
+                if [[ "$event" == release ]] || { printf '%s\n' "$name" | grep -Eiq 'release|publish|version|build|bundle|package' && { grep -Fxq -- "$branch" /tmp/keep_tags || grep -Fxq -- "$sha" /tmp/keep_shas; }; }; then
+                  keep=true
+                fi
+              fi
+            fi
+            [[ "$keep" == true ]] && continue
+            [[ "$status" == completed ]] || gh api --method POST "repos/$REPO/actions/runs/$id/force-cancel" >/dev/null 2>&1 || true
+          done < /tmp/runs
+          sleep 15
+          gh api --paginate "repos/$REPO/actions/runs?per_page=100" --jq '.workflow_runs[]|[.id,.status,(.conclusion//""),.event,(.head_branch//""),(.head_sha//""),(.name//"")]|@tsv' > /tmp/runs2
+          while IFS=$'\t' read -r id status conclusion event branch sha name; do
+            [[ "$id" == "$CURRENT_RUN_ID" ]] && continue
+            keep=false
+            if [[ "$status" == completed && "$conclusion" == success ]]; then
+              if ! printf '%s\n' "$name" | grep -Eiq 'test|smoke|compat|validat|verif|audit|check|runtime|regression|lint|compile|cleanup'; then
+                if [[ "$event" == release ]] || { printf '%s\n' "$name" | grep -Eiq 'release|publish|version|build|bundle|package' && { grep -Fxq -- "$branch" /tmp/keep_tags || grep -Fxq -- "$sha" /tmp/keep_shas; }; }; then
+                  keep=true
+                fi
+              fi
+            fi
+            [[ "$keep" == true ]] && continue
+            gh api --method DELETE "repos/$REPO/actions/runs/$id" >/dev/null 2>&1 || true
+          done < /tmp/runs2
